@@ -1,130 +1,96 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
-
-#define MAX_SIZE 10000
-
-void preprocessText(char text[])
+#define SIZE 10000
+void clean(char s[])
 {
-    char cleaned[MAX_SIZE];
-    int i, j = 0;
-    int spaceFound = 0;
-
-    for (i = 0; text[i] != '\0'; i++)
+    char t[SIZE];
+    int i, j;
+    int space;
+    j = 0;
+    space = 0;
+    for (i = 0; s[i] != '\0'; i++)
     {
-        if (isalnum((unsigned char)text[i]))
+        if (isalnum(s[i]))
         {
-            cleaned[j++] = tolower((unsigned char)text[i]);
-            spaceFound = 0;
+            t[j] = tolower(s[i]);
+            j++;
+            space = 0;
         }
-        else if (isspace((unsigned char)text[i]))
+        else if (isspace(s[i]))
         {
-            if (j > 0 && spaceFound == 0)
+            if (j > 0 && space == 0)
             {
-                cleaned[j++] = ' ';
-                spaceFound = 1;
+                t[j] = ' ';
+                j++;
+                space = 1;
             }
         }
     }
 
-    if (j > 0 && cleaned[j - 1] == ' ')
-    {
+    if (j > 0 && t[j - 1] == ' ')
         j--;
-    }
-
-    cleaned[j] = '\0';
-
-    strcpy(text, cleaned);
+    t[j] = '\0';
+    strcpy(s, t);
 }
-
-int readDocument(const char *filename, char text[])
+int readfile(char name[], char text[])
 {
-    FILE *file;
+    FILE *fp;
     int ch;
-    int i = 0;
-
-    file = fopen(filename, "r");
-
-    if (file == NULL)
+    int i;
+    fp = fopen(name, "r");
+    if (fp == NULL)
     {
-        printf("Error: Could not open file %s\n", filename);
+        printf("File cannot be opened: %s\n", name);
         return 0;
     }
-
-    while ((ch = fgetc(file)) != EOF && i < MAX_SIZE - 1)
+    i = 0;
+    while ((ch = fgetc(fp)) != EOF && i < SIZE - 1)
     {
-        text[i++] = (char)ch;
+        text[i] = ch;
+        i++;
     }
-
     text[i] = '\0';
-
-    fclose(file);
-
+    fclose(fp);
     return 1;
 }
-
-void saveProcessedText(const char *filename, const char text[])
+void writefile(char name[], char text[])
 {
-    FILE *file = fopen(filename, "w");
-
-    if (file == NULL)
+    FILE *fp;
+    fp = fopen(name, "w");
+    if (fp == NULL)
     {
-        printf("Error: Could not create output file.\n");
+        printf("Cannot create output file.\n");
         return;
     }
-
-    fprintf(file, "%s", text);
-
-    fclose(file);
+    fprintf(fp, "%s", text);
+    fclose(fp);
 }
-
 int main()
 {
-    char document1[MAX_SIZE];
-    char document2[MAX_SIZE];
-
-    printf("=====================================\n");
-    printf("   AI-BASED PLAGIARISM DETECTION\n");
-    printf("       DOCUMENT PROCESSING\n");
-    printf("=====================================\n\n");
-
-    if (!readDocument("input/document1.txt", document1))
-    {
+    char d1[SIZE];
+    char d2[SIZE];
+    printf("\n");
+    printf("AI BASED PLAGIARISM DETECTION\n");
+    printf("DOCUMENT PROCESSING\n");
+    printf("------------------------------\n");
+    if (readfile("input/document1.txt", d1) == 0)
         return 1;
-    }
-
-    if (!readDocument("input/document2.txt", document2))
-    {
+    if (readfile("input/document2.txt", d2) == 0)
         return 1;
-    }
-
-    printf("Original Document 1:\n");
-    printf("%s\n\n", document1);
-
-    printf("Original Document 2:\n");
-    printf("%s\n\n", document2);
-
-    preprocessText(document1);
-    preprocessText(document2);
-
-    printf("Processed Document 1:\n");
-    printf("%s\n\n", document1);
-
-    printf("Processed Document 2:\n");
-    printf("%s\n\n", document2);
-
-    saveProcessedText(
-        "output/processed_document1.txt",
-        document1
-    );
-
-    saveProcessedText(
-        "output/processed_document2.txt",
-        document2
-    );
-
-    printf("Document processing completed successfully.\n");
-    printf("Processed files saved in the output folder.\n");
-
+    printf("\nDocument 1:\n");
+    printf("%s\n", d1);
+    printf("\nDocument 2:\n");
+    printf("%s\n", d2);
+    clean(d1);
+    clean(d2);
+    printf("\nAfter Processing:\n");
+    printf("\nDocument 1:\n");
+    printf("%s\n", d1);
+    printf("\nDocument 2:\n");
+    printf("%s\n", d2);
+    writefile("output/processed_document1.txt", d1);
+    writefile("output/processed_document2.txt", d2);
+    printf("\nProcessing completed.\n");
     return 0;
 }
