@@ -1,12 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-
 #define MAX_SIZE 10000
 #define PRIME 101
 #define BASE 256
 
-// Read processed document from file
 int readDocument(const char *filename, char text[])
 {
     FILE *file = fopen(filename, "r");
@@ -16,41 +14,32 @@ int readDocument(const char *filename, char text[])
         printf("Error: Cannot open file %s\n", filename);
         return 0;
     }
-
-    size_t length = fread(text, sizeof(char), MAX_SIZE - 1, file);
+   size_t length = fread(text, sizeof(char), MAX_SIZE - 1, file);
     text[length] = '\0';
-
     fclose(file);
     return 1;
 }
 
-// Calculate hash value
 int calculateHash(const char *text, int length)
 {
     int hash = 0;
-
     for (int i = 0; i < length; i++)
     {
         hash = (hash * BASE + (unsigned char)text[i]) % PRIME;
     }
-
     return hash;
 }
-
-// Rabin-Karp string matching
-int rabinKarpSearch(const char *text, const char *pattern)
+  int rabinKarpSearch(const char *text, const char *pattern)
 {
     int textLength = strlen(text);
     int patternLength = strlen(pattern);
 
     if (patternLength == 0 || patternLength > textLength)
         return 0;
-
     int patternHash = calculateHash(pattern, patternLength);
     int textHash = calculateHash(text, patternLength);
 
     int highestPower = 1;
-
     for (int i = 0; i < patternLength - 1; i++)
         highestPower = (highestPower * BASE) % PRIME;
 
@@ -61,8 +50,6 @@ int rabinKarpSearch(const char *text, const char *pattern)
         if (patternHash == textHash)
         {
             int match = 1;
-
-            // Verify characters to avoid hash collision
             for (int j = 0; j < patternLength; j++)
             {
                 if (text[i + j] != pattern[j])
@@ -79,7 +66,6 @@ int rabinKarpSearch(const char *text, const char *pattern)
             }
         }
 
-        // Rolling hash
         if (i < textLength - patternLength)
         {
             textHash =
@@ -105,7 +91,6 @@ int main()
     printf("       RABIN-KARP STRING MATCHING\n");
     printf("=====================================\n\n");
 
-    // Read processed files created by Member 1
     if (!readDocument("output/processed_document1.txt", document1))
         return 1;
 
@@ -115,8 +100,6 @@ int main()
     printf("Enter pattern to search: ");
     fgets(pattern, sizeof(pattern), stdin);
     pattern[strcspn(pattern, "\n")] = '\0';
-
-    // Convert pattern to lowercase
     for (int i = 0; pattern[i] != '\0'; i++)
         pattern[i] = tolower((unsigned char)pattern[i]);
 
