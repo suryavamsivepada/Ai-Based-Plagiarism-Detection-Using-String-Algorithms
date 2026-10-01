@@ -30,7 +30,7 @@ void createLPS(char pattern[], int lps[])
     }
 }
 
-void KMP(char text[], char pattern[])
+int KMP(char text[], char pattern[])
 {
     int lps[1000];
     int i, j;
@@ -51,7 +51,6 @@ void KMP(char text[], char pattern[])
 
         if (pattern[j] == '\0')
         {
-            printf("Matching text found at position %d\n", i - j);
             found = 1;
             j = lps[j - 1];
         }
@@ -64,28 +63,5 @@ void KMP(char text[], char pattern[])
         }
     }
 
-    if (found == 0)
-        printf("Matching text not found.\n");
-}
-
-int main()
-{
-    char text[10000];
-    char pattern[1000];
-
-    printf("KMP STRING MATCHING\n");
-    printf("-------------------\n");
-
-    printf("Enter document text:\n");
-    fgets(text, sizeof(text), stdin);
-
-    printf("Enter text to search:\n");
-    fgets(pattern, sizeof(pattern), stdin);
-
-    text[strcspn(text, "\n")] = '\0';
-    pattern[strcspn(pattern, "\n")] = '\0';
-
-    KMP(text, pattern);
-
-    return 0;
+    return found;
 }

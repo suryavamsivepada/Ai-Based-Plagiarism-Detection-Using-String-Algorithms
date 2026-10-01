@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
 #include "document_processing.h"
 #include "hashing.h"
 #include "kmp.h"
@@ -11,10 +14,12 @@ int main()
 {
     char d1[SIZE];
     char d2[SIZE];
-    char pattern[1000];
+    char word[100];
     int h1, h2;
-    int kmp_result;
-    int rabin_result;
+    int kmpCount = 0;
+    int rabinCount = 0;
+    int i, j;
+    int start;
 
     printf("========================================\n");
     printf(" AI BASED PLAGIARISM DETECTION SYSTEM\n");
@@ -58,18 +63,69 @@ int main()
     printf("KMP STRING MATCHING\n");
     printf("========================================\n");
 
-    kmp_result = KMP(d1, d2);
+    start = 0;
+
+    while (d2[start] != '\0')
+    {
+        while (d2[start] == ' ')
+            start++;
+
+        if (d2[start] == '\0')
+            break;
+
+        i = 0;
+
+        while (d2[start] != ' ' && d2[start] != '\0')
+        {
+            word[i] = d2[start];
+            i++;
+            start++;
+        }
+
+        word[i] = '\0';
+
+        if (KMP(d1, word))
+        {
+            printf("Common word found using KMP: %s\n", word);
+            kmpCount++;
+        }
+    }
+
+    printf("Total common words using KMP: %d\n", kmpCount);
 
     printf("\n========================================\n");
     printf("RABIN-KARP STRING MATCHING\n");
     printf("========================================\n");
 
-    printf("Enter pattern to search: ");
-    scanf(" %[^\n]", pattern);
+    start = 0;
 
-    rabin_result = rabinKarpSearch(d1, pattern);
+    while (d2[start] != '\0')
+    {
+        while (d2[start] == ' ')
+            start++;
 
-    printf("Total occurrences in Document 1: %d\n", rabin_result);
+        if (d2[start] == '\0')
+            break;
+
+        i = 0;
+
+        while (d2[start] != ' ' && d2[start] != '\0')
+        {
+            word[i] = d2[start];
+            i++;
+            start++;
+        }
+
+        word[i] = '\0';
+
+        if (rabinKarpSearch(d1, word) > 0)
+        {
+            printf("Common word found using Rabin-Karp: %s\n", word);
+            rabinCount++;
+        }
+    }
+
+    printf("Total common words using Rabin-Karp: %d\n", rabinCount);
 
     printf("\n========================================\n");
     printf("SIMILARITY RESULT\n");

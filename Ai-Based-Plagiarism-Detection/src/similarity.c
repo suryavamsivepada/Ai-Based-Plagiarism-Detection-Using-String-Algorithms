@@ -65,33 +65,3 @@ void report(char text1[], char text2[])
         printf("Result           : Low similarity\n");
     printf("----------------------------------\n");
 }
-int main()
-{
-    char d1[SIZE];
-    char d2[SIZE];
-    FILE *f1;
-    FILE *f2;
-    printf("AI BASED PLAGIARISM DETECTION\n");
-    printf("SIMILARITY AND REPORT MODULE\n");
-    f1 = fopen("output/processed_document1.txt", "r");
-    if (f1 == NULL)
-    {
-        printf("Document 1 cannot be opened.\n");
-        return 1;
-    }
-    f2 = fopen("output/processed_document2.txt", "r");
-    if (f2 == NULL)
-    {
-        printf("Document 2 cannot be opened.\n");
-        fclose(f1);
-        return 1;
-    }
-    fread(d1, sizeof(char), SIZE - 1, f1);
-    fread(d2, sizeof(char), SIZE - 1, f2);
-    d1[SIZE - 1] = '\0';
-    d2[SIZE - 1] = '\0';
-    fclose(f1);
-    fclose(f2);
-    report(d1, d2);
-    return 0;
-}

@@ -66,31 +66,3 @@ void writefile(char name[], char text[])
     fprintf(fp, "%s", text);
     fclose(fp);
 }
-int main()
-{
-    char d1[SIZE];
-    char d2[SIZE];
-    printf("\n");
-    printf("AI BASED PLAGIARISM DETECTION\n");
-    printf("DOCUMENT PROCESSING\n");
-    printf("------------------------------\n");
-    if (readfile("input/document1.txt", d1) == 0)
-        return 1;
-    if (readfile("input/document2.txt", d2) == 0)
-        return 1;
-    printf("\nDocument 1:\n");
-    printf("%s\n", d1);
-    printf("\nDocument 2:\n");
-    printf("%s\n", d2);
-    clean(d1);
-    clean(d2);
-    printf("\nAfter Processing:\n");
-    printf("\nDocument 1:\n");
-    printf("%s\n", d1);
-    printf("\nDocument 2:\n");
-    printf("%s\n", d2);
-    writefile("output/processed_document1.txt", d1);
-    writefile("output/processed_document2.txt", d2);
-    printf("\nProcessing completed.\n");
-    return 0;
-}
