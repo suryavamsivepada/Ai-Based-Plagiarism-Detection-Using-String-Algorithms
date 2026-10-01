@@ -1,227 +1,317 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#define SIZE 10000
-#define PATTERN_SIZE 1000
-#define BASE 256
+
+#define MAX 10000
 #define PRIME 101
-void preprocess(char text[])
+
+void read_document(char filename[], char text[])
 {
-    char temp[SIZE];
-    int i, j, space;
-    i = 0;
-    j = 0;
-    space = 0;
-    while (text[i] != '\0')
+    FILE *fp;
+    int ch, i = 0;
+
+    fp = fopen(filename, "r");
+
+    if(fp == NULL)
     {
-        if (isalnum((unsigned char)text[i]))
-        {
-            temp[j] = tolower((unsigned char)text[i]);
-            j++;
-            space = 0;
-        }
-        else if (isspace((unsigned char)text[i]))
-        {
-            if (j > 0 && space == 0)
-            {
-                temp[j] = ' ';
-                j++;
-                space = 1;
-            }
-        }
+        text[0] = '\0';
+        return;
+    }
+
+    while((ch = fgetc(fp)) != EOF && i < MAX - 1)
+    {
+        text[i] = ch;
         i++;
     }
-    if (j > 0 && temp[j - 1] == ' ')
-        j--;
-    temp[j] = '\0';
-    strcpy(text, temp);
+
+    text[i] = '\0';
+    fclose(fp);
 }
-void lps_array(char pattern[], int lps[])
+
+void preprocess(char text[])
 {
-    int i, len;
-    i = 1;
-    len = 0;
-    lps[0] = 0;
-    while (pattern[i] != '\0')
+    int i;
+
+    for(i = 0; text[i] != '\0'; i++)
     {
-        if (pattern[i] == pattern[len])
+        text[i] = tolower(text[i]);
+
+        if(text[i] == '\n' || text[i] == '\t')
+            text[i] = ' ';
+    }
+}
+
+void compute_lps(char pattern[], int lps[])
+{
+    int m = strlen(pattern);
+    int len = 0;
+    int i = 1;
+
+    lps[0] = 0;
+
+    while(i < m)
+    {
+        if(pattern[i] == pattern[len])
         {
             len++;
             lps[i] = len;
             i++;
         }
-        else if (len != 0)
-        {
-            len = lps[len - 1];
-        }
         else
         {
-            lps[i] = 0;
-            i++;
+            if(len != 0)
+                len = lps[len - 1];
+            else
+            {
+                lps[i] = 0;
+                i++;
+            }
         }
     }
 }
-int kmp(char text[], char pattern[])
+
+int kmp_search(char text[], char pattern[])
 {
-    int lps[PATTERN_SIZE];
-    int i, j;
-    if (pattern[0] == '\0')
-        return -1;
-    lps_array(pattern, lps);
-    i = 0;
-    j = 0;
-    while (text[i] != '\0')
+    int n = strlen(text);
+    int m = strlen(pattern);
+    int lps[MAX];
+    int i = 0, j = 0;
+
+    if(m == 0 || m > n)
+        return 0;
+
+    compute_lps(pattern, lps);
+
+    while(i < n)
     {
-        if (text[i] == pattern[j])
+        if(text[i] == pattern[j])
         {
             i++;
             j++;
         }
-        if (pattern[j] == '\0')
-            return i - j;
-        if (text[i] != pattern[j])
+
+        if(j == m)
         {
-            if (j != 0)
+            printf("KMP: Pattern found at position %d\n", i - j);
+            return 1;
+        }
+
+        if(i < n && text[i] != pattern[j])
+        {
+            if(j != 0)
                 j = lps[j - 1];
             else
                 i++;
         }
     }
-    return -1;
+
+    printf("KMP: Pattern not found\n");
+
+    return 0;
 }
-int rabin(char text[], char pattern[])
+
+int calculate_hash(char text[])
 {
-    int n, m;
+    int i;
+    int hash = 0;
+
+    for(i = 0; text[i] != '\0'; i++)
+        hash = (hash * 31 + text[i]) % 100000;
+
+    return hash;
+}
+
+int rabin_karp(char text[], char pattern[])
+{
+    int n = strlen(text);
+    int m = strlen(pattern);
     int i, j;
-    int h;
-    int th, ph;
-    n = strlen(text);
-    m = strlen(pattern);
-    if (m == 0 || m > n)
-        return -1;
-    h = 1;
-    for (i = 0; i < m - 1; i++)
-        h = (h * BASE) % PRIME;
-    th = 0;
-    ph = 0;
-    for (i = 0; i < m; i++)
+    int ph = 0;
+    int th = 0;
+    int h = 1;
+
+    if(m == 0 || m > n)
+        return 0;
+
+    for(i = 0; i < m - 1; i++)
+        h = (h * 256) % PRIME;
+
+    for(i = 0; i < m; i++)
     {
-        ph = (BASE * ph + pattern[i]) % PRIME;
-        th = (BASE * th + text[i]) % PRIME;
+        ph = (256 * ph + pattern[i]) % PRIME;
+        th = (256 * th + text[i]) % PRIME;
     }
-    for (i = 0; i <= n - m; i++)
+
+    for(i = 0; i <= n - m; i++)
     {
-        if (th == ph)
+        if(ph == th)
         {
-            j = 0;
-            while (j < m && text[i + j] == pattern[j])
-                j++;
-            if (j == m)
-                return i;
+            for(j = 0; j < m; j++)
+            {
+                if(text[i + j] != pattern[j])
+                    break;
+            }
+
+            if(j == m)
+            {
+                printf("Rabin-Karp: Pattern found at position %d\n", i);
+                return 1;
+            }
         }
-        if (i < n - m)
+
+        if(i < n - m)
         {
-            th = (BASE * (th - text[i] * h)
-                  + text[i + m]) % PRIME;
-            if (th < 0)
+            th = (256 * (th - text[i] * h) + text[i + m]) % PRIME;
+
+            if(th < 0)
                 th = th + PRIME;
         }
     }
-    return -1;
+
+    printf("Rabin-Karp: Pattern not found\n");
+
+    return 0;
 }
-int count_words(char text[])
+
+float calculate_similarity(char text1[], char text2[])
 {
-    int i, count, inside;
-    i = 0;
-    count = 0;
-    inside = 0;
-    while (text[i] != '\0')
+    int i, j;
+    int common = 0;
+    int length1 = strlen(text1);
+    int length2 = strlen(text2);
+    int used[MAX] = {0};
+
+    for(i = 0; i < length1; i++)
     {
-        if (text[i] != ' ' && inside == 0)
+        for(j = 0; j < length2; j++)
         {
-            count++;
-            inside = 1;
+            if(text1[i] == text2[j] && used[j] == 0)
+            {
+                common++;
+                used[j] = 1;
+                break;
+            }
         }
-        else if (text[i] == ' ')
-        {
-            inside = 0;
-        }
-        i++;
     }
-    return count;
+
+    if(length1 + length2 == 0)
+        return 0;
+
+    return (2.0 * common / (length1 + length2)) * 100;
 }
-int common_words(char text1[], char text2[])
+
+void display_common_text(char text1[], char text2[])
 {
-    char copy[SIZE];
-    char *word;
-    int count;
-    strcpy(copy, text1);
-    count = 0;
-    word = strtok(copy, " ");
-    while (word != NULL)
+    int i, j;
+    int found;
+
+    for(i = 0; text1[i] != '\0'; i++)
     {
-        if (strstr(text2, word) != NULL)
-            count++;
-        word = strtok(NULL, " ");
+        found = 0;
+
+        for(j = 0; text2[j] != '\0'; j++)
+        {
+            if(text1[i] == text2[j])
+            {
+                found = 1;
+                break;
+            }
+        }
+
+        if(found)
+            printf("%c", text1[i]);
     }
-    return count;
+
+    printf("\n");
 }
+
 int main()
 {
-    char document1[SIZE];
-    char document2[SIZE];
-    char pattern[PATTERN_SIZE];
-    int p1, p2;
-    int w1, w2, common;
+    char text1[MAX];
+    char text2[MAX];
+    char file1[100];
+    char file2[100];
+    int h1, h2;
     float similarity;
-    printf("=====================================\n");
-    printf(" AI-BASED PLAGIARISM DETECTION\n");
-    printf("=====================================\n");
-    printf("\nEnter Document 1:\n");
-    fgets(document1, SIZE, stdin);
-    printf("\nEnter Document 2:\n");
-    fgets(document2, SIZE, stdin);
-    preprocess(document1);
-    preprocess(document2);
-    printf("\nProcessed Document 1:\n");
-    printf("%s\n", document1);
-    printf("\nProcessed Document 2:\n");
-    printf("%s\n", document2);
-    printf("\nEnter text to search:\n");
-    fgets(pattern, PATTERN_SIZE, stdin);
-    pattern[strcspn(pattern, "\n")] = '\0';
-    p1 = kmp(document1, pattern);
-    p2 = rabin(document2, pattern);
-    printf("\nKMP Result: ");
-    if (p1 >= 0)
-        printf("Match found at position %d\n", p1);
+
+    printf("============================================\n");
+    printf(" AI-BASED PLAGIARISM DETECTION SYSTEM\n");
+    printf("     USING STRING ALGORITHMS\n");
+    printf("============================================\n\n");
+
+    printf("Enter first document name: ");
+    scanf("%s", file1);
+
+    printf("Enter second document name: ");
+    scanf("%s", file2);
+
+    read_document(file1, text1);
+    read_document(file2, text2);
+
+    if(text1[0] == '\0' || text2[0] == '\0')
+    {
+        printf("\nError: Unable to read document.\n");
+        return 1;
+    }
+
+    printf("\nDocuments read successfully.\n");
+
+    preprocess(text1);
+    preprocess(text2);
+
+    printf("Text preprocessing completed.\n");
+
+    h1 = calculate_hash(text1);
+    h2 = calculate_hash(text2);
+
+    printf("\n============================================\n");
+    printf("HASHING RESULT\n");
+    printf("============================================\n");
+
+    printf("Hash of Document 1: %d\n", h1);
+    printf("Hash of Document 2: %d\n", h2);
+
+    if(h1 == h2)
+        printf("Hash values are same.\n");
     else
-        printf("Match not found\n");
-    printf("Rabin-Karp Result: ");
-    if (p2 >= 0)
-        printf("Match found at position %d\n", p2);
+        printf("Hash values are different.\n");
+
+    printf("\n============================================\n");
+    printf("KMP STRING MATCHING\n");
+    printf("============================================\n");
+
+    kmp_search(text1, text2);
+
+    printf("\n============================================\n");
+    printf("RABIN-KARP STRING MATCHING\n");
+    printf("============================================\n");
+
+    rabin_karp(text1, text2);
+
+    printf("\n============================================\n");
+    printf("SIMILARITY CALCULATION\n");
+    printf("============================================\n");
+
+    similarity = calculate_similarity(text1, text2);
+
+    printf("Similarity Percentage: %.2f%%\n", similarity);
+
+    printf("\n============================================\n");
+    printf("COMMON TEXT\n");
+    printf("============================================\n");
+
+    display_common_text(text1, text2);
+
+    printf("\n============================================\n");
+    printf("FINAL RESULT\n");
+    printf("============================================\n");
+
+    if(similarity >= 30)
+        printf("Similar content detected.\n");
     else
-        printf("Match not found\n");
-    w1 = count_words(document1);
-    w2 = count_words(document2);
-    common = common_words(document1, document2);
-    if (w1 > w2 && w1 > 0)
-        similarity = common * 100.0 / w1;
-    else if (w2 > 0)
-        similarity = common * 100.0 / w2;
-    else
-        similarity = 0;
-    printf("\n=====================================\n");
-    printf("          FINAL REPORT\n");
-    printf("=====================================\n");
-    printf("Document 1 words : %d\n", w1);
-    printf("Document 2 words : %d\n", w2);
-    printf("Common words     : %d\n", common);
-    printf("Similarity       : %.2f%%\n", similarity);
-    if (similarity >= 30)
-        printf("Result            : Similar content detected\n");
-    else
-        printf("Result            : Low similarity\n");
-    printf("=====================================\n");
+        printf("Low similarity detected.\n");
+
+    printf("\nAnalysis completed successfully.\n");
+
     return 0;
 }
